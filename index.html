@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ჩემი თემები</title>
+    <title>დავალებები</title>
     <style>
         * {
             box-sizing: border-box;
@@ -16,214 +16,445 @@
             margin: 0;
             padding: 30px;
             min-height: 100vh;
+            /* ცენტრირება ამოღებულია, რათა პანელები კიდეებში გავიდეს */
         }
 
-        .container {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            gap: 50px;
+        /* --- Loading Circle (სპინერი) --- */
+        .loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 5px solid #e2e8f0; border-top-color: #3b82f6;
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- პრემიუმ შესვლის გვერდი --- */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            display: flex; justify-content: center; align-items: center; z-index: 2000;
         }
 
-        .panel {
+        .login-box {
             background: #ffffff;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            padding: 50px;
+            border-radius: 24px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 450px; 
+            display: flex; flex-direction: column; gap: 25px;
+            text-align: center;
         }
 
-        .left-panel {
-            flex: 0 1 65%; 
+        .login-icon {
+            width: 60px; height: 60px; margin: 0 auto;
+            background: #eff6ff; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-icon .svg-icon { stroke: #3b82f6; width: 30px; height: 30px; }
+
+        .login-box h2 { margin: 0; font-size: 28px; color: #0f172a; font-weight: 800; }
+        .login-box p { margin: -15px 0 5px 0; color: #64748b; font-size: 15px; }
+
+        .login-box input {
+            width: 100%; padding: 16px; border: 2px solid #e2e8f0;
+            border-radius: 12px; font-size: 16px; outline: none; transition: all 0.3s;
+            background: #f8fafc;
+        }
+        .login-box input:focus {
+            border-color: #3b82f6; background: #ffffff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
 
-        .right-panel {
-            flex: 0 1 300px; 
-            position: sticky;
-            top: 30px;
-            align-self: flex-start;
+        .login-box button {
+            background: #3b82f6; color: white; padding: 16px; border-radius: 12px;
+            font-size: 18px; font-weight: bold; border: none; cursor: pointer;
+            width: 100%; transition: background 0.3s, transform 0.1s;
+        }
+        .login-box button:hover { background: #2563eb; transform: translateY(-2px); }
+        .login-box button:active { transform: translateY(1px); }
+        .error-text { color: #ef4444; font-size: 15px; min-height: 20px; font-weight: 500; }
+
+        /* --- Toast შეტყობინება --- */
+        .notification-toast {
+            position: fixed; top: 20px; right: 20px; background: #ef4444; color: white;
+            padding: 15px 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+            transform: translateX(150%); transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 5000; font-weight: 500;
+        }
+        .notification-toast.show { transform: translateX(0); }
+        .notification-toast.success { background: #10b981; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3); }
+
+        /* --- Confirm ფანჯარა --- */
+        .confirm-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 4000;
         }
 
-        h2 {
-            margin-top: 0;
-            font-size: 20px;
-            color: #1e293b;
-            border-bottom: 2px solid #f1f5f9;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
+        .confirm-box {
+            background: white; padding: 35px 30px; border-radius: 20px;
+            width: 380px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            transform: scale(0.9); opacity: 0; animation: popIn 0.3s forwards;
+        }
+        @keyframes popIn { to { transform: scale(1); opacity: 1; } }
+
+        .confirm-icon {
+            background: #fee2e2; width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;
+        }
+        .confirm-icon .svg-icon { width: 30px; height: 30px; stroke: #ef4444; }
+        
+        .confirm-box h3 { margin: 0 0 10px 0; color: #1e293b; font-size: 20px; }
+        .confirm-box p { color: #64748b; font-size: 15px; margin: 0 0 25px 0; line-height: 1.5; }
+        
+        .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+        .confirm-btn { flex: 1; padding: 12px; border-radius: 10px; font-size: 15px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-cancel-confirm { background: #f1f5f9; color: #475569; }
+        .btn-cancel-confirm:hover { background: #e2e8f0; }
+        .btn-do-confirm { background: #ef4444; color: white; }
+        .btn-do-confirm:hover { background: #dc2626; }
+
+        /* --- მთავარი Wrapper --- */
+        #mainWrapper {
+            display: none; flex-direction: column; width: 100%; 
+            /* მაქსიმალური სიგანე ამოღებულია, რათა სრულ ეკრანზე გაიშალოს */
         }
 
-        .task-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        /* --- Top Bar (გამოსვლის ღილაკისთვის) --- */
+        .top-bar {
+            display: flex; justify-content: flex-end; margin-bottom: 20px; width: 100%;
+        }
+
+        .logout-btn {
+            background: #ffffff; color: #ef4444; border: 1px solid #fee2e2;
+            padding: 10px 20px; border-radius: 12px; font-size: 15px; font-weight: bold;
+            display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .logout-btn:hover { background: #fee2e2; transform: translateY(-2px); }
+        .logout-btn .svg-icon { stroke: currentColor; }
+
+        /* --- კონტეინერი (მარცხენა და მარჯვენა) --- */
+        .container { 
+            display: flex; justify-content: space-between; width: 100%; gap: 50px; 
+        }
+        
+        .panel { background: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); }
+        
+        .left-panel { flex: 1; } /* იკავებს დარჩენილ მთლიან სივრცეს მარცხნივ */
+        .right-panel { flex: 0 1 350px; position: sticky; top: 30px; align-self: flex-start; } /* 350px მარჯვნივ */
+
+        .panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 25px;
+        }
+        .panel-header h2 { margin: 0; font-size: 20px; color: #1e293b; }
+
+        /* --- ცხრილის სტილი დავალებებისთვის --- */
+        .task-table-wrapper { display: flex; flex-direction: column; gap: 10px; }
+        
+        .task-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 100px;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .task-table-header {
+            padding: 10px 20px; color: #64748b; font-size: 13px; font-weight: bold;
+            border-bottom: 2px solid #e2e8f0; margin-bottom: 10px; text-transform: uppercase;
         }
 
         .task-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            transition: all 0.3s ease;
+            padding: 16px 20px; background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 10px; transition: all 0.3s ease;
+        }
+        .task-item:hover { border-color: #cbd5e1; }
+
+        .col-n { font-weight: 700; color: #94a3b8; font-size: 15px; }
+        .col-task { font-size: 16px; color: #333; }
+        .col-status { display: flex; gap: 10px; justify-content: flex-end; }
+
+        .action-btn {
+            cursor: pointer; border: none; display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; border-radius: 8px; background: transparent; transition: all 0.2s ease; padding: 0;
         }
 
-        .task-text {
-            font-size: 16px;
-            flex-grow: 1;
-            padding-right: 20px;
-            transition: color 0.3s ease;
-        }
+        .svg-icon { width: 20px; height: 20px; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
-        .actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        button {
-            cursor: pointer;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            background: transparent;
-            transition: all 0.2s ease;
-            padding: 0;
-        }
-
-        .svg-icon {
-            width: 20px;
-            height: 20px;
-            stroke-width: 2.5;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        /* ტიკის ღილაკი */
-        .tick-btn {
-            border: 2px solid #cbd5e1;
-            border-radius: 50%;
-            color: transparent; 
-        }
-
-        .tick-btn .svg-icon {
-            stroke: transparent;
-            transition: stroke 0.2s ease;
-        }
-
+        .tick-btn { border: 2px solid #cbd5e1; border-radius: 50%; color: transparent; }
+        .tick-btn .svg-icon { stroke: transparent; transition: stroke 0.2s; }
         .tick-btn:hover { border-color: #10b981; }
         .tick-btn:hover .svg-icon { stroke: #10b981; }
 
-        /* დახურვის ღილაკი */
         .close-btn { background: #fee2e2; }
         .close-btn .svg-icon { stroke: #ef4444; }
         .close-btn:hover { background: #fecaca; }
 
-        /* "შესრულებული" სტატუსი (არა-დაბლოკილი) */
-        .task-item.completed .tick-btn {
-            background: #10b981;
-            border-color: #10b981;
-        }
+        /* სტატუსები ცხრილში */
+        .task-item.completed .tick-btn { background: #10b981; border-color: #10b981; }
         .task-item.completed .tick-btn .svg-icon { stroke: white; }
-        .task-item.completed .task-text {
-            color: #94a3b8;
-            text-decoration: line-through;
-        }
+        .task-item.completed .col-task { color: #94a3b8; text-decoration: line-through; }
 
-        /* "დაბლოკილი" სტატუსი (ოდნავ მწვანე ფონი) */
-        .task-item.locked {
-            background: #e6fdf4; /* ღია მწვანე ფონი */
-            border-color: #a7f3d0; /* მწვანე ჩარჩო */
-            pointer-events: none; /* იბლოკება ყოველგვარი კლიკი */
-        }
-        
-        .task-item.locked .task-text {
-            color: #64748b;
-            text-decoration: line-through;
-        }
+        .task-item.locked { background: #e6fdf4; border-color: #a7f3d0; pointer-events: none; }
+        .task-item.locked .col-task { color: #64748b; text-decoration: line-through; }
 
         .locked-indicator {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            background: #10b981;
-            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; background: #10b981; border-radius: 8px;
         }
-
         .locked-indicator .svg-icon { stroke: white; }
 
-        /* ფორმა */
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        /* მარჯვენა პანელი: დამატება და რედაქტირება */
+        .global-edit-btn {
+            background: #eff6ff; color: #3b82f6; border: none; cursor: pointer;
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
         }
+        .global-edit-btn:hover { background: #dbeafe; }
+        .global-edit-btn .svg-icon { stroke: #3b82f6; }
 
-        input[type="text"] {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus { border-color: #3b82f6; }
-
-        .add-btn {
-            background: #3b82f6;
-            color: #ffffff;
-            padding: 14px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 10px;
-            width: 100%;
-            height: auto;
-        }
-
+        .input-group { display: flex; flex-direction: column; gap: 15px; }
+        input.main-input { width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; outline: none; }
+        input.main-input:focus { border-color: #3b82f6; }
+        .add-btn { background: #3b82f6; color: #ffffff; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 10px; width: 100%; border: none; cursor: pointer; }
         .add-btn:hover { background: #2563eb; }
 
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .left-panel, .right-panel { width: 100%; flex: none; }
+        /* --- დიდი რედაქტირების Popup --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
         }
+        .modal-box.large {
+            background: #ffffff; padding: 30px; border-radius: 20px;
+            width: 95%; max-width: 1200px; height: 85vh;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column;
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px;
+        }
+        .modal-header h3 { margin: 0; font-size: 22px; color: #1e293b; }
+        
+        .close-modal-btn {
+            display: flex; align-items: center; justify-content: center;
+            background: #f1f5f9; border: none; border-radius: 50%;
+            width: 40px; height: 40px; cursor: pointer; transition: 0.2s; padding: 0;
+        }
+        .close-modal-btn .svg-icon { stroke: #64748b; }
+        .close-modal-btn:hover { background: #e2e8f0; }
+        .close-modal-btn:hover .svg-icon { stroke: #ef4444; }
+
+        .modal-task-list { overflow-y: auto; padding-right: 10px; display: flex; flex-direction: column; gap: 15px; flex-grow: 1; }
+        .modal-task-list::-webkit-scrollbar { width: 6px; }
+        .modal-task-list::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .modal-task-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        .modal-task-item { display: flex; align-items: center; gap: 15px; background: #f8fafc; padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .modal-task-item input { flex-grow: 1; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; outline: none; }
+        .modal-task-item input:focus { border-color: #3b82f6; }
+
+        .status-badge { font-size: 12px; padding: 5px 10px; border-radius: 20px; font-weight: bold; }
+        .badge-locked { background: #dcfce7; color: #166534; }
+        .badge-completed { background: #dbeafe; color: #1e40af; }
+        .badge-open { background: #f1f5f9; color: #475569; }
+
+        .modal-btn { padding: 10px 15px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn-save { background: #10b981; color: white; }
+        .btn-delete { background: #fee2e2; color: #ef4444; }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- მარცხენა კუთხე -->
-        <div class="panel left-panel">
-            <h2>შესასრულებელი თემები</h2>
-            <div class="task-list" id="taskList">
-                <!-- დავალებები ჩაიტვირთება Firebase-დან -->
+    <!-- გლობალური ჩატვირთვის სპინერი -->
+    <div id="globalLoader" class="loader-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- პრემიუმ ავტორიზაციის გვერდი -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <div class="login-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
             </div>
+            <div>
+                <h2>ShogiTasks</h2>
+            </div>
+            <input type="text" id="username" placeholder="მომხმარებელი">
+            <input type="password" id="password" placeholder="პაროლი">
+            <div id="loginError" class="error-text"></div>
+            <button onclick="attemptLogin()">ავტორიზაცია</button>
         </div>
-        
-        <!-- მარჯვენა კუთხე -->
-        <div class="panel right-panel">
-            <h2>დამატება</h2>
-            <div class="input-group">
-                <input type="text" id="taskInput" placeholder="ჩაწერეთ თემა აქ...">
-                <button class="add-btn" onclick="addTask()">სიის შევსება</button>
+    </div>
+
+    <!-- შეტყობინების Toast -->
+    <div id="notificationToast" class="notification-toast"></div>
+
+    <!-- ლამაზი Confirm ფანჯარა -->
+    <div id="customConfirm" class="confirm-overlay">
+        <div class="confirm-box">
+            <div class="confirm-icon">
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </div>
+            <h3>ყურადღება</h3>
+            <p id="confirmText">ნამდვილად გსურთ ამ დავალების წაშლა?</p>
+            <div class="confirm-actions">
+                <button class="confirm-btn btn-cancel-confirm" onclick="closeConfirm()">გაუქმება</button>
+                <button class="confirm-btn btn-do-confirm" id="confirmYesBtn">წაშლა</button>
             </div>
         </div>
     </div>
 
-    <!-- Firebase SDK (v10 modular) -->
+    <!-- დიდი რედაქტირების Popup -->
+    <div id="globalEditModal" class="modal-overlay">
+        <div class="modal-box large">
+            <div class="modal-header">
+                <h3>მართვა</h3>
+                <button class="close-modal-btn" onclick="closeGlobalEditModal()" title="დახურვა">
+                    <svg class="svg-icon" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-task-list" id="globalModalTaskList"></div>
+        </div>
+    </div>
+
+    <!-- მთავარი Wrapper -->
+    <div id="mainWrapper">
+        <div class="top-bar">
+            <button class="logout-btn" onclick="logout()" title="გასვლა">
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                გასვლა
+            </button>
+        </div>
+
+        <div class="container">
+            <!-- მარცხენა კუთხე: დავალებების ცხრილი -->
+            <div class="panel left-panel">
+                <div class="panel-header">
+                    <h2>დავალებები</h2>
+                </div>
+                <div class="task-table-wrapper">
+                    <div class="task-row task-table-header">
+                        <div class="col-n">N</div>
+                        <div class="col-task">დავალება</div>
+                        <div class="col-status">სტატუსი</div>
+                    </div>
+                    <div id="taskList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                </div>
+            </div>
+            
+            <!-- მარჯვენა კუთხე -->
+            <div class="panel right-panel">
+                <div class="panel-header">
+                    <h2>დამატება</h2>
+                    <button class="global-edit-btn" onclick="openGlobalEditModal()" title="რედაქტირება">
+                        <svg class="svg-icon" viewBox="0 0 24 24">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="taskInput" class="main-input" placeholder="ჩაწერეთ...">
+                    <button class="add-btn" onclick="addTask()">დამატება</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
+        window.allTasksData = {};
+
+        // Loader ლოგიკა
+        const showLoader = () => document.getElementById('globalLoader').style.display = 'flex';
+        const hideLoader = () => document.getElementById('globalLoader').style.display = 'none';
+
+        // ლოგინის ლოგიკა
+        window.attemptLogin = () => {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const errorText = document.getElementById('loginError');
+
+            errorText.innerText = '';
+            showLoader();
+
+            setTimeout(() => {
+                hideLoader();
+                if (user === 'alex' && pass === '2911') {
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('mainWrapper').style.display = 'flex';
+                } else {
+                    errorText.innerText = "არასწორი მონაცემები! სცადეთ ხელახლა.";
+                }
+            }, 600);
+        };
+
+        window.logout = () => {
+            showLoader();
+            setTimeout(() => {
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('loginError').innerText = '';
+                
+                document.getElementById('mainWrapper').style.display = 'none';
+                document.getElementById('loginOverlay').style.display = 'flex';
+                
+                window.closeGlobalEditModal();
+                window.closeConfirm();
+                hideLoader();
+            }, 400);
+        };
+
+        // შეტყობინების ფუნქცია
+        window.showNotification = (message, type = 'error') => {
+            const toast = document.getElementById('notificationToast');
+            toast.innerText = message;
+            toast.className = 'notification-toast'; 
+            if(type === 'success') toast.classList.add('success');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        };
+
+        // Confirm ფანჯრის ლოგიკა
+        let confirmActionCallback = null;
+        window.showConfirm = (message, callback) => {
+            document.getElementById('confirmText').innerText = message;
+            confirmActionCallback = callback;
+            document.getElementById('customConfirm').style.display = 'flex';
+        };
+        window.closeConfirm = () => {
+            document.getElementById('customConfirm').style.display = 'none';
+            confirmActionCallback = null;
+        };
+        document.getElementById('confirmYesBtn').addEventListener('click', () => {
+            if (confirmActionCallback) confirmActionCallback();
+            window.closeConfirm();
+        });
+
+        // Firebase-ის პარამეტრები
         const firebaseConfig = {
             apiKey: "AIzaSyDEtQ4Sac1OVA9NZXlym7hRXZF1b4x2xyM",
             authDomain: "prescription-79426.firebaseapp.com",
@@ -235,113 +466,158 @@
             measurementId: "G-N0DNTNTMY1"
         };
 
-        // Firebase ინიციალიზაცია
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const tasksRef = ref(db, 'tasks');
 
-        // მონაცემების რეალურ დროში წამოღება (Realtime Sync)
+        // მონაცემების მოსმენა
         onValue(tasksRef, (snapshot) => {
-            const list = document.getElementById('taskList');
-            list.innerHTML = ''; // ვასუფთავებთ სიას
-            
-            const data = snapshot.val();
-            if (data) {
-                // ვაბრუნებთ ობიექტს მასივად და ვხატავთ თითოეულ დავალებას
-                Object.keys(data).forEach(key => {
-                    renderTask(key, data[key]);
-                });
+            const data = snapshot.val() || {};
+            window.allTasksData = data;
+            renderMainList(data);
+            if(document.getElementById('globalEditModal').style.display === 'flex') {
+                renderGlobalModalList(data);
             }
         });
 
-        // დავალების დახატვის ფუნქცია
-        function renderTask(id, task) {
+        // მთავარი სიის დახატვა (ცხრილის ფორმატით)
+        function renderMainList(data) {
             const list = document.getElementById('taskList');
-            const item = document.createElement('div');
+            list.innerHTML = ''; 
             
-            // კლასების მინიჭება სტატუსების მიხედვით
-            let className = 'task-item';
-            if (task.completed) className += ' completed';
-            if (task.locked) className += ' locked';
-            item.className = className;
-            
-            let actionsHtml = '';
-            
-            if (task.locked) {
-                // თუ დაბლოკილია, ვხატავთ მხოლოდ ბოქლომს
-                actionsHtml = `
-                    <div class="locked-indicator" title="დავალება დახურულია">
-                        <svg class="svg-icon" viewBox="0 0 24 24">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                        </svg>
-                    </div>
-                `;
-            } else {
-                // თუ ღიაა, ვხატავთ მოქმედების ღილაკებს
-                actionsHtml = `
-                    <button class="tick-btn" onclick="toggleTask('${id}', ${task.completed})" title="შესრულება">
-                        <svg class="svg-icon" viewBox="0 0 24 24">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </button>
-                    <button class="close-btn" onclick="lockTask('${id}', ${task.completed})" title="დახურვა (დაბლოკვა)">
-                        <svg class="svg-icon" viewBox="0 0 24 24">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                `;
-            }
+            let index = 1; 
+            Object.keys(data).forEach(id => {
+                const task = data[id];
+                const item = document.createElement('div');
+                
+                let className = 'task-row task-item';
+                if (task.completed) className += ' completed';
+                if (task.locked) className += ' locked';
+                item.className = className;
+                
+                let actionsHtml = '';
+                if (task.locked) {
+                    actionsHtml = `
+                        <div class="locked-indicator" title="დავალება დახურულია">
+                            <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </div>
+                    `;
+                } else {
+                    actionsHtml = `
+                        <button class="action-btn tick-btn" onclick="toggleTask('${id}', ${task.completed})" title="შესრულება">
+                            <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </button>
+                        <button class="action-btn close-btn" onclick="lockTask('${id}', ${task.completed})" title="დახურვა">
+                            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    `;
+                }
 
-            item.innerHTML = `
-                <span class="task-text">${task.text}</span>
-                <div class="actions">${actionsHtml}</div>
-            `;
-            
-            list.appendChild(item);
+                item.innerHTML = `
+                    <div class="col-n">${index}</div>
+                    <div class="col-task">${task.text}</div>
+                    <div class="col-status">${actionsHtml}</div>
+                `;
+                list.appendChild(item);
+                index++;
+            });
         }
 
-        // გლობალური ფუნქციები (window-ზე მიბმა, რომ HTML-იდან დავუძახოთ)
-        
         window.addTask = async () => {
             const input = document.getElementById('taskInput');
             const text = input.value.trim();
             if(text === '') return; 
-
-            // Firebase-ში ჩაწერა
-            await push(tasksRef, {
-                text: text,
-                completed: false,
-                locked: false
-            });
             
+            showLoader();
+            await push(tasksRef, { text: text, completed: false, locked: false });
             input.value = ''; 
+            hideLoader();
         };
 
         window.toggleTask = async (id, currentStatus) => {
-            // სტატუსის შეცვლა (შესრულებული / შეუსრულებელი)
-            const taskRef = ref(db, 'tasks/' + id);
-            await update(taskRef, { completed: !currentStatus });
+            showLoader();
+            await update(ref(db, 'tasks/' + id), { completed: !currentStatus });
+            hideLoader();
         };
 
         window.lockTask = async (id, isCompleted) => {
-            // ვამოწმებთ, არის თუ არა შესრულებული დაბლოკვამდე
             if (!isCompleted) {
-                alert('დავალების დასაბლოკად ჯერ უნდა შეასრულოთ (მონიშნოთ ტიკით).');
+                window.showNotification("დავალების დასახურად ჯერ შეასრულეთ ის!");
                 return;
             }
-            
-            // თუ შესრულებულია, ვბლოკავთ Firebase-ში
-            const taskRef = ref(db, 'tasks/' + id);
-            await update(taskRef, { locked: true });
+            showLoader();
+            await update(ref(db, 'tasks/' + id), { locked: true });
+            hideLoader();
         };
 
-        // Enter კლავიშით დამატება
-        document.getElementById('taskInput').addEventListener('keypress', function(e) {
-            if(e.key === 'Enter') {
-                window.addTask();
+        // რედაქტირების POPUP
+        window.openGlobalEditModal = () => {
+            document.getElementById('globalEditModal').style.display = 'flex';
+            renderGlobalModalList(window.allTasksData);
+        };
+        window.closeGlobalEditModal = () => {
+            document.getElementById('globalEditModal').style.display = 'none';
+        };
+
+        window.renderGlobalModalList = (data) => {
+            const list = document.getElementById('globalModalTaskList');
+            list.innerHTML = '';
+            
+            if (Object.keys(data).length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#64748b;">ბაზაში მონაცემი არ არის.</p>';
+                return;
             }
+
+            Object.keys(data).forEach(id => {
+                const task = data[id];
+                
+                let statusBadge = '<span class="status-badge badge-open">შეუსრულებელი</span>';
+                if(task.locked) statusBadge = '<span class="status-badge badge-locked">დახურული</span>';
+                else if(task.completed) statusBadge = '<span class="status-badge badge-completed">შესრულებული</span>';
+
+                const safeText = task.text.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+
+                list.innerHTML += `
+                    <div class="modal-task-item">
+                        ${statusBadge}
+                        <input type="text" id="edit-input-${id}" value="${safeText}">
+                        <button class="modal-btn btn-save" onclick="saveTaskFromModal('${id}')" title="შენახვა">
+                            <svg class="svg-icon" viewBox="0 0 24 24" style="stroke:white;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        </button>
+                        <button class="modal-btn btn-delete" onclick="deleteTaskFromModal('${id}')" title="წაშლა">
+                            <svg class="svg-icon" viewBox="0 0 24 24" style="stroke:#ef4444;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                `;
+            });
+        };
+
+        window.saveTaskFromModal = async (id) => {
+            const inputEl = document.getElementById(`edit-input-${id}`);
+            const newText = inputEl.value.trim();
+            if (newText !== '') {
+                showLoader();
+                await update(ref(db, 'tasks/' + id), { text: newText });
+                hideLoader();
+                window.showNotification("ცვლილება შენახულია!", "success");
+            }
+        };
+
+        window.deleteTaskFromModal = (id) => {
+            window.showConfirm("ნამდვილად გსურთ ამ დავალების წაშლა ბაზიდან?", async () => {
+                showLoader();
+                await remove(ref(db, 'tasks/' + id));
+                hideLoader();
+                window.showNotification("დავალება წაიშალა", "success");
+            });
+        };
+
+        // Enter ღილაკზე მოქმედებები
+        document.getElementById('taskInput').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') window.addTask();
+        });
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') window.attemptLogin();
         });
     </script>
 </body>
