@@ -1,1 +1,348 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ჩემი თემები</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
+        body {
+            background-color: #eef2f5;
+            color: #333;
+            margin: 0;
+            padding: 30px;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 50px;
+        }
+
+        .panel {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .left-panel {
+            flex: 0 1 65%; 
+        }
+
+        .right-panel {
+            flex: 0 1 300px; 
+            position: sticky;
+            top: 30px;
+            align-self: flex-start;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 20px;
+            color: #1e293b;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .task-text {
+            font-size: 16px;
+            flex-grow: 1;
+            padding-right: 20px;
+            transition: color 0.3s ease;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: transparent;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+
+        .svg-icon {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ტიკის ღილაკი */
+        .tick-btn {
+            border: 2px solid #cbd5e1;
+            border-radius: 50%;
+            color: transparent; 
+        }
+
+        .tick-btn .svg-icon {
+            stroke: transparent;
+            transition: stroke 0.2s ease;
+        }
+
+        .tick-btn:hover { border-color: #10b981; }
+        .tick-btn:hover .svg-icon { stroke: #10b981; }
+
+        /* დახურვის ღილაკი */
+        .close-btn { background: #fee2e2; }
+        .close-btn .svg-icon { stroke: #ef4444; }
+        .close-btn:hover { background: #fecaca; }
+
+        /* "შესრულებული" სტატუსი (არა-დაბლოკილი) */
+        .task-item.completed .tick-btn {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        .task-item.completed .tick-btn .svg-icon { stroke: white; }
+        .task-item.completed .task-text {
+            color: #94a3b8;
+            text-decoration: line-through;
+        }
+
+        /* "დაბლოკილი" სტატუსი (ოდნავ მწვანე ფონი) */
+        .task-item.locked {
+            background: #e6fdf4; /* ღია მწვანე ფონი */
+            border-color: #a7f3d0; /* მწვანე ჩარჩო */
+            pointer-events: none; /* იბლოკება ყოველგვარი კლიკი */
+        }
+        
+        .task-item.locked .task-text {
+            color: #64748b;
+            text-decoration: line-through;
+        }
+
+        .locked-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: #10b981;
+            border-radius: 8px;
+        }
+
+        .locked-indicator .svg-icon { stroke: white; }
+
+        /* ფორმა */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus { border-color: #3b82f6; }
+
+        .add-btn {
+            background: #3b82f6;
+            color: #ffffff;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            width: 100%;
+            height: auto;
+        }
+
+        .add-btn:hover { background: #2563eb; }
+
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+            .left-panel, .right-panel { width: 100%; flex: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- მარცხენა კუთხე -->
+        <div class="panel left-panel">
+            <h2>შესასრულებელი თემები</h2>
+            <div class="task-list" id="taskList">
+                <!-- დავალებები ჩაიტვირთება Firebase-დან -->
+            </div>
+        </div>
+        
+        <!-- მარჯვენა კუთხე -->
+        <div class="panel right-panel">
+            <h2>დამატება</h2>
+            <div class="input-group">
+                <input type="text" id="taskInput" placeholder="ჩაწერეთ თემა აქ...">
+                <button class="add-btn" onclick="addTask()">სიის შევსება</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (v10 modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDEtQ4Sac1OVA9NZXlym7hRXZF1b4x2xyM",
+            authDomain: "prescription-79426.firebaseapp.com",
+            databaseURL: "https://prescription-79426-default-rtdb.firebaseio.com",
+            projectId: "prescription-79426",
+            storageBucket: "prescription-79426.firebasestorage.app",
+            messagingSenderId: "764525239937",
+            appId: "1:764525239937:web:07ec5d45340e590f8a7780",
+            measurementId: "G-N0DNTNTMY1"
+        };
+
+        // Firebase ინიციალიზაცია
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const tasksRef = ref(db, 'tasks');
+
+        // მონაცემების რეალურ დროში წამოღება (Realtime Sync)
+        onValue(tasksRef, (snapshot) => {
+            const list = document.getElementById('taskList');
+            list.innerHTML = ''; // ვასუფთავებთ სიას
+            
+            const data = snapshot.val();
+            if (data) {
+                // ვაბრუნებთ ობიექტს მასივად და ვხატავთ თითოეულ დავალებას
+                Object.keys(data).forEach(key => {
+                    renderTask(key, data[key]);
+                });
+            }
+        });
+
+        // დავალების დახატვის ფუნქცია
+        function renderTask(id, task) {
+            const list = document.getElementById('taskList');
+            const item = document.createElement('div');
+            
+            // კლასების მინიჭება სტატუსების მიხედვით
+            let className = 'task-item';
+            if (task.completed) className += ' completed';
+            if (task.locked) className += ' locked';
+            item.className = className;
+            
+            let actionsHtml = '';
+            
+            if (task.locked) {
+                // თუ დაბლოკილია, ვხატავთ მხოლოდ ბოქლომს
+                actionsHtml = `
+                    <div class="locked-indicator" title="დავალება დახურულია">
+                        <svg class="svg-icon" viewBox="0 0 24 24">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                `;
+            } else {
+                // თუ ღიაა, ვხატავთ მოქმედების ღილაკებს
+                actionsHtml = `
+                    <button class="tick-btn" onclick="toggleTask('${id}', ${task.completed})" title="შესრულება">
+                        <svg class="svg-icon" viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+                    <button class="close-btn" onclick="lockTask('${id}', ${task.completed})" title="დახურვა (დაბლოკვა)">
+                        <svg class="svg-icon" viewBox="0 0 24 24">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                `;
+            }
+
+            item.innerHTML = `
+                <span class="task-text">${task.text}</span>
+                <div class="actions">${actionsHtml}</div>
+            `;
+            
+            list.appendChild(item);
+        }
+
+        // გლობალური ფუნქციები (window-ზე მიბმა, რომ HTML-იდან დავუძახოთ)
+        
+        window.addTask = async () => {
+            const input = document.getElementById('taskInput');
+            const text = input.value.trim();
+            if(text === '') return; 
+
+            // Firebase-ში ჩაწერა
+            await push(tasksRef, {
+                text: text,
+                completed: false,
+                locked: false
+            });
+            
+            input.value = ''; 
+        };
+
+        window.toggleTask = async (id, currentStatus) => {
+            // სტატუსის შეცვლა (შესრულებული / შეუსრულებელი)
+            const taskRef = ref(db, 'tasks/' + id);
+            await update(taskRef, { completed: !currentStatus });
+        };
+
+        window.lockTask = async (id, isCompleted) => {
+            // ვამოწმებთ, არის თუ არა შესრულებული დაბლოკვამდე
+            if (!isCompleted) {
+                alert('დავალების დასაბლოკად ჯერ უნდა შეასრულოთ (მონიშნოთ ტიკით).');
+                return;
+            }
+            
+            // თუ შესრულებულია, ვბლოკავთ Firebase-ში
+            const taskRef = ref(db, 'tasks/' + id);
+            await update(taskRef, { locked: true });
+        };
+
+        // Enter კლავიშით დამატება
+        document.getElementById('taskInput').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') {
+                window.addTask();
+            }
+        });
+    </script>
+</body>
+</html>
